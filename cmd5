@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+# coding:utf-8
+
+
+import requests
+from pyquery import PyQuery as pq
+import sys
+import cjson as json
+import re
+
+user_agent = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36"
+
+}
+
+
+def _get(url, s, **kwargs):
+    if "headers" in kwargs:
+        kwargs["headers"].update(user_agent)
+    else:
+        kwargs["headers"] = user_agent
+
+    r = s.get(url, timeout=3, **kwargs)
+    return r.text
+
+
+def _post(url, s, **kwargs):
+    if "headers" in kwargs:
+        kwargs["headers"].update(user_agent)
+    else:
+        kwargs["headers"] = user_agent
+    r = s.post(url, timeout=3, **kwargs)
+    return r.text
+
+
+def get_md5_com_cn(astring):
+    # 初始化页面，获得sand,token,submit=MD5 Crack
+    s = requests.Session()
+    init_page = _get("http://md5.com.cn", s)
+    d = pq(init_page)
+    p = d("#searchbox form").find("input")
+    init_data = {}
+    for row in p:
+        init_data[row.name] = row.value
+    init_data["md"] = astring
+    md5reverse_page = _post("http://md5.com.cn/md5reverse", s,
+        data=init_data, headers={
+            "Origin": "http://md5.com.cn",
+            "Referer": "http://md5.com.cn/"
+        })
+    md5 = pq(md5reverse_page)
+    reg = md5("#reg").find("span:eq(1)")
+    if reg.find("span"):
+        return None
+    return reg.text()
+
+
+def get_md5crack_com(astring):
+    api_key = "MAQKX7VAljFPcxzQ"
+    s = requests.Session()
+    data = _get("http://api.md5crack.com/crack/%s/%s" % (api_key, astring,), s)
+    md5 = json.decode(data)
+    return md5.get("phrase", "")
+
+
+def get_md5decryption_com(astring):
+    s = requests.Session()
+    page = _post("http://md5decryption.com/", s,
+            data={
+                "hash": astring,
+                "submit": "Decrypt It!",
+            }, headers = {
+                "Origin": "http://md5decryption.com",
+                "Referer": "http://md5decryption.com/"
+            })
+    md5 = re.findall("<b><font size='2'>Decrypted Text: </b>(.*)</font>", page)
+    if not md5 or len(md5) != 1: return ""
+    return md5[0]
+
+
+def format(astring):
+    print "md5.com.cn result:[%s]" % get_md5_com_cn(astring)
+    try:
+        print "md5crack.com result:[%s]" % get_md5crack_com(astring)
+    except requests.exceptions.Timeout:
+        print "md5crack.com result:[] !timeout"
+    print "md5decryption.com result:[%s]" % get_md5decryption_com(astring)
+
+
+def usage():
+    print "Usage: ./cmd5 [md5]"
+    sys.exit(255)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        usage()
+    format(sys.argv[1])

@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+# coding:utf-8
+
+"""
+key：1954269478
+keyfrom：sms4-sinaapp
+"""
+
+import requests
+import sys
+from pprint import pprint
+
+
+KEY="1954269478"
+KEYFROM="sms4-sinaapp"
+
+
+def search(word):
+  r = requests.get("http://fanyi.youdao.com/openapi.do?keyfrom=%s&key=%s&type=data&doctype=json&version=1.1&q=%s" % (KEYFROM, KEY, word))
+  return r.json()
+
+
+def format_youdao(data, debug=False):
+  if data.get("errorCode", -1) != 0:
+    pprint(data)
+    return
+  if debug:
+    print "=" * 5, "DEBUG", "=" * 5
+    pprint(data)
+    print "=" * 17
+    # print basic
+  if data.get("basic"):
+    if data["basic"].get("explains"):
+      for exp in data["basic"].get("explains"):
+        print exp
+    # print translation
+  for exp in data.get("translation"):
+    print exp
+  if data.get("web"):
+    print "===== web ="
+    for web in data.get("web"):
+      print web.get("key")
+      for v in web.get("value"):
+        print " -", v
+
+  return
+
+
+if __name__ == "__main__":
+  if len(sys.argv) < 2:
+    print "Usage: dict [word]"
+    sys.exit()
+
+  if len(sys.argv) == 3 and sys.argv[2] == "-debug":
+    format_youdao(search(sys.argv[1]), True)
+  else:
+    format_youdao(search(sys.argv[1]))

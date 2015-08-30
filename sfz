@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+# coding:utf-8
+
+get_id = lambda s:s+str((1-2*int(s, 13)) % 11).replace('10', 'X') 
+
+# 100000-666666
+
+import random
+import sys
+
+if len(sys.argv) == 2:
+  if len(sys.argv[1]) == 17:
+    print get_id(sys.argv[1])
+  else:
+    print "Usage: %s [num]" % sys.argv[0]
+else:
+  a = 420000
+  b = "%d%02d%02d" % (random.randint(1980, 1999), random.randint(1, 12), random.randint(1, 28))
+  c = "%03d" % random.randint(1, 999)
+  _co = "%d%s%s" % (a, b, c)
+  print get_id(_co)
+
